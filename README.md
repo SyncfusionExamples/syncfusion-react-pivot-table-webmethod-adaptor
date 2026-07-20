@@ -83,12 +83,13 @@ This application provides a clean starting point for integrating the Syncfusion 
 ### Frontend
 | Technology | Version | Purpose |
 |-----------|---------|---------|
-| React | ^19.2.4 | UI framework |
-| React DOM | ^19.2.4 | React rendering engine |
-| React Scripts | 5.0.1 | Build tooling and dev server |
-| @syncfusion/ej2-react-pivotview | latest | Pivot Table component |
+| React | ^19.2.x | UI framework |
+| React DOM | ^19.2.x | React rendering engine |
+| TypeScript | ~6.0.x | Type-safe client source (`.tsx`) |
+| Vite | ^8.1.x | Build tooling and dev server |
+| @syncfusion/ej2-react-pivotview | ^34.1.x | Pivot Table component |
 | @syncfusion/ej2-data | latest | DataManager and WebMethodAdaptor |
-| Testing Library | ^16.3.2 | Unit and component testing |
+| @syncfusion/ej2-tailwind3-theme | ^34.1.x | Tailwind 3 theme for EJ2 components |
 
 ### Backend
 | Technology | Version | Purpose |
@@ -247,18 +248,18 @@ Open a second terminal and run:
 
 ```bash
 cd Client
-npm start
+npm run dev
 ```
 
-The React application will start on:
+The Vite React application will start on:
 
-- `http://localhost:3000`
+- `http://localhost:5173` (Vite default)
 
 ### 3. Verify the sample
 
 Once both applications are running:
 
-1. Open `http://localhost:3000` in your browser.
+1. Open `http://localhost:5173` in your browser.
 2. The Pivot Table loads data from the backend through the WebMethodAdaptor.
 3. Use the drill-through editor to **add**, **edit**, or **delete** records.
 4. The Pivot Table refreshes automatically after each operation.
@@ -270,7 +271,7 @@ cd Client
 npm run build
 ```
 
-This produces an optimized production build in `Client/build/`.
+This produces an optimized production build in `Client/dist/` (Vite's default output directory).
 
 ---
 
@@ -287,10 +288,10 @@ The backend exposes the following endpoints in `OrdersController`:
 | POST   | `/api/Orders/Remove`     | Removes an order record (matched by `OrderID`) |
 | POST   | `/api/Orders/CrudUpdate` | Single endpoint that dispatches to insert/update/remove based on the `action` field |
 
-If you change the backend port, update the URLs in `Client/src/App.js` so the frontend points to the correct API address:
+If you change the backend port, update the URLs in `Client/src/App.tsx` so the frontend points to the correct API address:
 
-```javascript
-const data = new DataManager({
+```typescript
+const data: DataManager = new DataManager({
     url: 'http://localhost:<port>/api/Orders',
     insertUrl: 'http://localhost:<port>/api/Orders/Insert',
     updateUrl: 'http://localhost:<port>/api/Orders/Update',
@@ -299,6 +300,12 @@ const data = new DataManager({
     adaptor: new WebMethodAdaptor()
 });
 ```
+
+> **Imports**: The snippet above assumes the following imports are present in `App.tsx`:
+>
+> ```typescript
+> import { DataManager, WebMethodAdaptor } from '@syncfusion/ej2-data';
+> ```
 
 ### CRUDModel Request Envelope
 
@@ -326,20 +333,22 @@ webmethod-adaptor-with-pivot-table/
 ├── README.md                              # This file
 ├── web-method-adaptor.md                  # Detailed WebMethodAdaptor reference
 │
-├── Client/                                # React Frontend
+├── Client/                                # React + TypeScript Frontend (Vite)
 │   ├── package.json                       # npm dependencies & scripts
+│   ├── vite.config.ts                     # Vite configuration (React plugin)
+│   ├── tsconfig.json                      # TypeScript project references
+│   ├── tsconfig.app.json                  # TypeScript config for app source
+│   ├── tsconfig.node.json                 # TypeScript config for build tooling
+│   ├── index.html                         # Vite HTML entry point (loads /src/main.tsx)
 │   ├── public/
-│   │   ├── index.html                     # HTML entry point
-│   │   ├── manifest.json                  # PWA manifest
-│   │   └── robots.txt
+│   │   ├── favicon.svg                     # Site favicon
+│   │   └── icons.svg                      # Icon assets
 │   └── src/
-│       ├── App.js                         # Main component (PivotView + DataManager)
+│       ├── App.tsx                        # Main component (PivotView + DataManager)
 │       ├── App.css                        # Component styles
-│       ├── App.test.js                    # Component tests
-│       ├── datasource.js                  # Local data source (not used by WebMethodAdaptor)
-│       ├── index.js                       # React root
+│       ├── main.tsx                       # React root (StrictMode + createRoot)
 │       ├── index.css                      # Global styles
-│       └── reportWebVitals.js
+│       └── assets/                        # Static assets bundled by Vite
 │
 └── WebMethodAdaptor/                      # ASP.NET Core Backend
     ├── Program.cs                         # App startup, JSON & CORS configuration
@@ -364,10 +373,13 @@ webmethod-adaptor-with-pivot-table/
 
 | File | Purpose |
 |------|---------|
-| `Client/src/App.js` | Main React component — PivotView configuration, DataManager setup with `WebMethodAdaptor`, edit settings, and `beginDrillThrough` event |
-| `Client/src/index.js` | React application entry point and DOM mounting |
+| `Client/src/App.tsx` | Main React + TypeScript component — PivotView configuration, DataManager setup with `WebMethodAdaptor`, typed `editSettings`, and `beginDrillThrough` event |
+| `Client/src/main.tsx` | React application entry point using `createRoot` with `StrictMode` |
 | `Client/src/App.css` | Component-level styles |
-| `Client/package.json` | Frontend dependencies and npm scripts |
+| `Client/index.html` | Vite HTML entry point (loads `/src/main.tsx`) |
+| `Client/vite.config.ts` | Vite configuration registering the `@vitejs/plugin-react` plugin |
+| `Client/tsconfig.json` | TypeScript project references (app + node configs) |
+| `Client/package.json` | Frontend dependencies and npm scripts (`dev`, `build`, `preview`) |
 
 #### Backend Key Files
 
@@ -387,7 +399,7 @@ webmethod-adaptor-with-pivot-table/
 ### Pivot Table does not load data
 
 - ✅ Verify the backend is running: `dotnet run` in the `WebMethodAdaptor` folder
-- ✅ Confirm the URL in `Client/src/App.js` matches the backend port shown in the console (default `5006`)
+- ✅ Confirm the URL in `Client/src/App.tsx` matches the backend port shown in the console (default `5006`)
 - ✅ Check the browser **Developer Tools → Network** tab for failed requests
 - ✅ Verify the response uses the `{ result, count }` shape and uses the original property casing (`OrderID`, not `orderId`)
 
@@ -395,7 +407,7 @@ webmethod-adaptor-with-pivot-table/
 
 ```
 Access to XMLHttpRequest at 'http://localhost:5006/api/Orders' from origin 
-'http://localhost:3000' has been blocked by CORS policy.
+'http://localhost:5173' has been blocked by CORS policy.
 ```
 
 - ✅ Ensure CORS is enabled in `WebMethodAdaptor/Program.cs`
@@ -405,13 +417,13 @@ Access to XMLHttpRequest at 'http://localhost:5006/api/Orders' from origin
 ### Port already in use
 
 - ✅ Change the port in `WebMethodAdaptor/Properties/launchSettings.json`
-- ✅ Update the matching URL in `Client/src/App.js`
+- ✅ Update the matching URL in `Client/src/App.tsx`
 - ✅ On Windows, find the process with `netstat -ano | findstr :5006` and kill it with `taskkill /PID <PID> /F`
 
 ### CRUD operations not saving
 
 - ✅ Confirm the primary key (`OrderID`) is correctly set in the `beginDrillThrough` event
-- ✅ Check that the `insertUrl`, `updateUrl`, and `removeUrl` values in `App.js` match the backend routes exactly
+- ✅ Check that the `insertUrl`, `updateUrl`, and `removeUrl` values in `App.tsx` match the backend routes exactly
 - ✅ Verify the request body contains the expected `CRUDModel<T>` shape wrapped in a `value` object (`action`, `keyColumn`, `key`, `value`, `@params`)
 
 ### Empty Pivot Table layout
@@ -422,7 +434,7 @@ Access to XMLHttpRequest at 'http://localhost:5006/api/Orders' from origin
 
 ### WebMethodAdaptor payload not being read
 
-- ✅ Confirm `WebMethodAdaptor` (not `UrlAdaptor`) is imported and used in `App.js`: `import { DataManager, WebMethodAdaptor } from '@syncfusion/ej2-data'`
+- ✅ Confirm `WebMethodAdaptor` (not `UrlAdaptor`) is imported and used in `App.tsx`: `import { DataManager, WebMethodAdaptor } from '@syncfusion/ej2-data'`
 - ✅ Verify the backend expects the wrapped `value` envelope — `WebMethodAdaptor` always nests parameters inside `value`
 
 ### SSL/TLS certificate error
@@ -440,7 +452,7 @@ You can extend this sample by:
 - **Adding more Pivot Table fields**: Configure additional fields such as `ShipCountry`, `Verified`, or `OrderDate` as rows, columns, filters, or values
 - **Customizing the editing experience**: Try `Dialog` or `Batch` edit modes for different UX patterns
 - **Using the single `CrudUpdate` endpoint**: Replace separate `insertUrl/updateUrl/removeUrl` with a single `crudUrl` and route by `action`
-- **Migrating to UrlAdaptor**: If your backend does not require the nested `value` envelope, switch the adaptor in `App.js` to `UrlAdaptor` and drop the `value` wrappers on the server
+- **Migrating to UrlAdaptor**: If your backend does not require the nested `value` envelope, switch the adaptor in `App.tsx` to `UrlAdaptor` and drop the `value` wrappers on the server
 - **Adding filtering, sorting, and grouping**: Extend the API to support server-side filtering and pass `where` conditions from the client
 - **Implementing authentication**: Secure the CRUD endpoints with JWT or cookie-based auth
 - **Exporting pivot data**: Add PDF, Excel, or CSV export on top of the existing API
